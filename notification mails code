@@ -1,0 +1,54 @@
+global class Bgexpirynotification implements Schedulable {
+    global void execute(SchedulableContext sc) {
+        
+        List<Deposit__c> depositRecordslist = [SELECT Id, Name ,Opportunity__c, Owner.Email, ZonalDirectSalesHead__r.Email, User__c,RecordType.Name, Status__c,	Email__c, 	OwnerId, BG_Expiry_DateReport__c, ExpectedDateofEMDReport__c, WatcherId__c FROM Deposit__c where IsDateExpired__c=True];
+         
+         Messaging.SingleEmailMessage[] messages =   new List<Messaging.SingleEmailMessage> {};
+         for(Deposit__c record :depositRecordslist )
+        {
+        Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage(); 
+        message.toAddresses = new String[] {record.Owner.Email};
+        system.debug('mailer name'+record.Owner.Email);
+        List<String> ccTo = new List<String>();
+        
+        if(record.RecordType.Name=='Bank Guarantee'){
+            ccTo.add(record.ZonalDirectSalesHead__r.Email);  
+            system.debug('mailer name'+record.ZonalDirectSalesHead__r.Email);
+           // ccTo.add('supriyar@dealermatix.com');
+            ccTo.add('harshmeetk@dealermatix.com');
+            message.setCcAddresses(ccTo);
+            system.debug('mailer name'+message.toAddresses);
+        }
+        else{
+            ccTo.add(record.ZonalDirectSalesHead__r.Email);
+             system.debug('mailer name'+record.ZonalDirectSalesHead__r.Email);
+            ccTo.add('Himanshus@dealermatix.com');
+            ccTo.add('Himanshusuman555@gmail.com');
+           	message.setCcAddresses(ccTo);
+            system.debug('mailer name'+message.toAddresses);
+        }
+        
+        message.optOutPolicy = 'FILTER';
+        
+        
+        if(record.RecordType.Name=='Bank Guarantee'){
+            message.subject = +'BG ' +record.Name +' is Expiring on '+record.BG_Expiry_DateReport__c;
+            message.setHtmlBody(
+                '<P>Hi,<br/><br/>Thanks for using ConSol! This is a system generated reminder to inform you that the BG Number <b>' +record.Name+ '</b> is going to expire on date <b>' +record.BG_Expiry_DateReport__c+ '.</b><br/><br/>Warm Regards,<br/>ConSol Support Team</p> ');
+        }
+        if(record.RecordType.Name=='EMD & Tender Fees'){
+            message.subject = +'EMD ' +record.Name +' is Expiring on '+record.ExpectedDateofEMDReport__c;
+            message.setHtmlBody(
+                '<P>Hi,<br/><br/>Thanks for using ConSol! This is a system generated reminder to inform you that the EMD Number <b>' +record.Name+ '</b> is going to expire on date <b>' +record.ExpectedDateofEMDReport__c+ '.</b><br/><br/>Warm Regards,<br/>ConSol Support Team</p> ');
+        }       
+            
+                messages.add(message);
+                
+                        
+       }
+        
+         Messaging.SendEmailResult[] results = Messaging.sendEmail(messages);
+        }
+        
+       
+}
